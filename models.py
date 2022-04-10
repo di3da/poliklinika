@@ -240,12 +240,7 @@ class Visit():
         ) 
     '''
     SQL_INSERTNOTE = ''' 
-        INSERT INTO visit WHERE id = {} (
-            note
-        )
-        VALUES(
-            "{}"
-        ) 
+        UPDATE visit SET note = '{}' WHERE id = {};
     '''
 
     SQL_CREATE = '''
@@ -293,8 +288,8 @@ class Visit():
     def savenote(self, idx, note):
         cursor = CONNECTION.cursor()
         cursor.execute(self.SQL_INSERTNOTE.format(
-            idx,
-            note
+            note,
+            idx
         ))
         CONNECTION.commit()
 
