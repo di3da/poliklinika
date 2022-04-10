@@ -6,10 +6,13 @@ CONNECTION = None
 
 class User():
     SQL_SELECT = '''
-        SELECT * from userdata WHERE login = '{}';
+        SELECT * from userdata WHERE {} = '{}';
     '''
     SQL_SELECTALL = '''
         SELECT * from userdata;
+    '''
+    SQL_SELECTFIO = '''
+        SELECT * from userdata WHERE fio = '{}';
     '''
 
     SQL_DELETE = '''
@@ -108,9 +111,9 @@ class User():
         return result 
 
     @staticmethod
-    def select(login):
+    def select(type, condition):
         cursor = CONNECTION.cursor()
-        cursor.execute(User.SQL_SELECT.format(login))
+        cursor.execute(User.SQL_SELECT.format(type, condition))
         result = []   
         for row in cursor.fetchall():
             login = row[0]
@@ -158,6 +161,9 @@ class Patient():
             "{}"
         ) 
     '''
+
+
+    
     def __init__(self, 
         fio, 
         dob, 
@@ -213,41 +219,99 @@ class Patient():
         return result
     
 class Visit():
+    SQL_SELECT = '''
+        SELECT * from visit WHERE {} = '{}';
+    '''
 
     SQL_INSERT = ''' 
         INSERT INTO visit (
             patient_fio,
-            doctor_fio,
+            doctor_login,
             visitdata,
-            time
+            time,
+            note
         )
         VALUES(
+            "{}",
             "{}",
             "{}",
             "{}",
             "{}"
         ) 
     '''
+    SQL_INSERTNOTE = ''' 
+        INSERT INTO visit WHERE id = {} (
+            note
+        )
+        VALUES(
+            "{}"
+        ) 
+    '''
+
+    SQL_CREATE = '''
+        CREATE TABLE visit (
+            patient_fio TEXT NOT NULL,
+            doctor_login TEXT NOT NULL,
+            visitdata DATE NOT NULL,
+            time TEXT NOT NULL,
+            note TEXT,
+            id INTEGER PRIMARY KEY
+        );
+    '''
+    def __repr__(self):
+        rep = '\n______________ ' + '\nНомер приема ' + str(self.id) + '\nПациент ' + str(self.patient_fio) + '\nДоктор ' + str(User.select('login', self.doctor_login)[0].fio) + '\nДата ' + str(self.visitdate) + '\nВремя ' + str(self.time) + '\nКомментарий ' + str(self.note)
+        return rep
     
     def __init__(self, 
         patient_fio, 
-        doctor_fio, 
+        doctor_login, 
         visitdate, 
-        time):
+        time,
+        note,
+        id
+        ):
         cursor = CONNECTION.cursor()
         self.id = None
         self.patient_fio = patient_fio
-        self.doctor_fio = doctor_fio
+        self.doctor_login = doctor_login
         self.visitdate = visitdate
         self.time = time
+        self.note = note
 
     def save(self):
         cursor = CONNECTION.cursor()
         cursor.execute(self.SQL_INSERT.format(
             self.patient_fio,
-            self.doctor_fio,
+            self.doctor_login,
             self.visitdate,
             self.time,
+            self.note
         ))
         CONNECTION.commit()
         print('Номер талона:', self.id)
+
+    def savenote(self, idx, note):
+        cursor = CONNECTION.cursor()
+        cursor.execute(self.SQL_INSERTNOTE.format(
+            idx,
+            note
+        ))
+        CONNECTION.commit()
+
+    @staticmethod
+    def select(type, condition):
+        cursor = CONNECTION.cursor()
+        cursor.execute(Visit.SQL_SELECT.format(type, condition))
+        result = []   
+        for row in cursor.fetchall():
+            patient_fio = row[0]
+            doctor_login = row[1]
+            visitdata = row[2]
+            time = row[3]
+            note = row[4]
+            idx = row[5]
+            user = Visit(patient_fio, doctor_login, visitdata, time, note, idx)
+            user.id = idx
+            result.append(user)   
+        return result
+

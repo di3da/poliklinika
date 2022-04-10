@@ -51,7 +51,24 @@ def discharge():
     print(fio, 'уволен(а)')
 
 def card():
-    pass
+    print(models.Visit.select('doctor_login', current_user[0].login))
+    print('Введите "прием", если необходимо принять пациента; \nВведите "карта", если необходимо прочитать данные из медкарты')
+    choise = input()
+    if choise == 'прием':
+        print('Выберите номер назначенного приема')
+        number = input()
+        visit = models.Visit.select('id', number)[0]
+        print('Введите запись, которая добавится в медкарту')
+        note = input()
+        visit.savenote(number, note)
+    elif choise == 'карта':
+        print('Введите ФИО пациента')    
+        fio = input()
+        print(models.Visit.select('patient_fio', fio))
+    else:
+        print('Введите "прием" или "карта"!')
+    main(current_user)
+
 
 def prescription():
     pass
@@ -76,11 +93,13 @@ def visitdoctor():
     print(models.User.selectall())
     print("Введите ФИО доктора без сокращений:")
     doctor_fio = input()
+    doctor_login = models.User.select('fio', doctor_fio)[0].login
+    print(doctor_login)
     print("Введите дату приёма:")
     visitdata = input()
     print("Введите время приёма:")
     time = input()
-    a = models.Visit(patient_fio, doctor_fio, visitdata, time)
+    a = models.Visit(patient_fio, doctor_login, visitdata, time)
     a.save()
     main(current_user)
 
@@ -117,9 +136,10 @@ def authenticate():
     login = input()
     print("Введите пароль:")
     pw = input().encode()
-    a = models.User.select(login)
+    a = models.User.select('login', login)
     h = blake2b(pw, digest_size=20).hexdigest()
     print(h)
+    print(a)
     if a == []:
         print('Такой пользователь не зарегистрирован')
         authenticate()
@@ -130,11 +150,14 @@ def authenticate():
         authenticate()
     return a
     
+    
 
 
 if __name__ == '__main__':
     current_user = authenticate()
+    print(current_user[0].login)
     main(current_user)
+    
 
 
     
